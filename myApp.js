@@ -14,7 +14,8 @@
 //
 // mongoose.connect(<Your URI>, { useNewUrlParser: true, useUnifiedTopology: true }); 
 
-
+const mongoose = require('mongoose');
+mongoose.connect(process.env.MONGO_URI,  { useNewUrlParser: true, useUnifiedTopology: true });
 
 /** # SCHEMAS and MODELS #
 /*  ====================== */
@@ -40,8 +41,15 @@
 // `default` values. See the [mongoose docs](http://mongoosejs.com/docs/guide.html).
 
 // <Your code here >
+const Schema = mongoose.Schema;
+const personSchema = new Schema({
+  name: {type: String, required: true},
+  age: Number,
+  favoriteFoods: [String]
+});
 
-var Person /* = <Your Model> */
+
+/* = <Your Model> */
 
 // **Note**: Glitch is a real server, and in real servers interactions with
 // the db are placed in handler functions, to be called when some event happens
@@ -78,11 +86,16 @@ var Person /* = <Your Model> */
 //    ...do your stuff here...
 // });
 
-var createAndSavePerson = function(done) {
-  
-  done(null /*, data*/);
+var Person = mongoose.model("Person", personSchema);
 
+var createAndSavePerson = (done) => {
+  var document = new Person({name: "Huss AIM", age: 36, favoriteFoods: ["shawerma","laban"]});
+  document.save((err, data) => {
+    if(err) return console.error(err);
+    done(null,data);
+  });
 };
+
 
 /** 4) Create many People with `Model.create()` */
 
@@ -94,10 +107,22 @@ var createAndSavePerson = function(done) {
 // Model.create() with the argument arrayOfPeople.
 // Note: You can reuse the model you instantiated in the previous exercise.
 
+
+var arrayOfPeople = [
+  {name: "Paco Carbin", age: 22, favoriteFoods: ["Arroz", "Pasta"]}, 
+  {name: "Juanita Carnitas", age: 19, favoriteFoods: ["Entrecot", "Pechuga empanada"]}, 
+  {name: "Jose Verdoliega", age: 150, favoriteFoods:["Lechuga", "Calabacin"]}, 
+  {name: "r@nd0mN4m3", age: 87, favoriteFoods:["Aceite de coco","Manteca"]}, 
+  {name: "Paula Mezcladillo", age: 32, favoriteFoods:["chicken salad"]}
+  ];
+
+
 var createManyPeople = function(arrayOfPeople, done) {
-    
-    done(null/*, data*/);
-    
+  Person.create(arrayOfPeople, (err, people) => {
+    if(err) return console.err(err);
+    done(null, people);
+
+  });
 };
 
 /** # C[R]UD part II - READ #
@@ -110,10 +135,14 @@ var createManyPeople = function(arrayOfPeople, done) {
 // object ) as the first argument, and returns an **array** of matches.
 // It supports an extremely wide range of search options. Check it in the docs.
 // Use the function argument `personName` as search key.
+//var personName = ("Paula Mezcladillo");
 
 var findPeopleByName = function(personName, done) {
-  
-  done(null/*, data*/);
+  Person.find({name: personName}, (err, pFound) => {
+    if(err) return console.err(err);
+    
+    done(null, pFound);
+  });
 
 };
 
@@ -125,11 +154,12 @@ var findPeopleByName = function(personName, done) {
 // Find just one person which has a certain food in her favorites,
 // using `Model.findOne() -> Person`. Use the function
 // argument `food` as search key
-
+//var food = (["pizza"]);
 var findOneByFood = function(food, done) {
-
-  done(null/*, data*/);
-  
+  Person.findOne({favoriteFoods: food}, (err, pFound) => {
+    if(err) return console.err(err);
+    done(null, pFound);    
+  });  
 };
 
 /** 7) Use `Model.findById()` */
@@ -142,9 +172,10 @@ var findOneByFood = function(food, done) {
 // Use the function argument 'personId' as search key.
 
 var findPersonById = function(personId, done) {
-  
-  done(null/*, data*/);
-  
+  Person.findById(personId, function (err, data) {
+    if(err) return console.err(err);
+    done(null, data); 
+  });  
 };
 
 /** # CR[U]D part III - UPDATE # 
@@ -174,8 +205,14 @@ var findPersonById = function(personId, done) {
 
 var findEditThenSave = function(personId, done) {
   var foodToAdd = 'hamburger';
-  
-  done(null/*, data*/);
+  Person.findById(personId, function (err, data) {
+    if(err) return console.err(err);
+    data.favoriteFoods.push(foodToAdd);
+    data.save((err,data0) => {
+      if(err) return console.error(err);
+      done(null,data0);
+    }); 
+  });  
 };
 
 /** 9) New Update : Use `findOneAndUpdate()` */
@@ -193,10 +230,13 @@ var findEditThenSave = function(personId, done) {
 // to `findOneAndUpdate()`. By default the method
 // passes the unmodified object to its callback.
 
+
 var findAndUpdate = function(personName, done) {
   var ageToSet = 20;
-
-  done(null/*, data*/);
+  Person.findOneAndUpdate({name: personName}, {age: ageToSet}, {new: true}, (err, data) => {
+    if(err) return console.error(err);
+    done(null, data);
+  });
 };
 
 /** # CRU[D] part IV - DELETE #
@@ -208,11 +248,23 @@ var findAndUpdate = function(personName, done) {
 // `findByIdAndRemove()` or `findOneAndRemove()`. They are similar to the
 // previous update methods. They pass the removed document to the cb.
 // As usual, use the function argument `personId` as search key.
-
+/*
 var removeById = function(personId, done) {
-  
-  done(null/*, data*/);
+  Person.findByIdAndRemove(personId, (err, data) =>
+  {
+    if(err) return console.error(err);
+    done(null, data);
+  });
     
+};
+*/
+//Or
+var removeById = function(personId, done) {
+  Person.findOneAndDelete({_id: personId }, (err, data) =>
+  {
+    if(err) return console.error(err);
+    done(null, data);
+  });  
 };
 
 /** 11) Delete many People */
@@ -224,11 +276,19 @@ var removeById = function(personId, done) {
 // Note: `Model.remove()` doesn't return the removed document, but a document
 // containing the outcome of the operation, and the number of items affected.
 // Don't forget to pass it to the `done()` callback, since we use it in tests.
+/*
+Code Explanation
+remove() sends a remove command to MongoDB to remove all matched documents. In this case, all documents with a name of Mary are removed.
+The response is a JSON object containing properties such as deletedCount - containing the number of documents removed from the collection.
+*/
 
 var removeManyPeople = function(done) {
   var nameToRemove = "Mary";
-
-  done(null/*, data*/);
+  Person.remove({name: nameToRemove}, (err, data) => 
+  {
+    if(err) return console.error(err);
+    done(null, data);
+  });
 };
 
 /** # C[R]UD part V -  More about Queries # 
@@ -251,8 +311,15 @@ var removeManyPeople = function(done) {
 
 var queryChain = function(done) {
   var foodToSearch = "burrito";
-  
-  done(null/*, data*/);
+  Person.find({favoriteFoods: foodToSearch})
+        .sort({name: 1})
+        .limit(2)
+        .select('-age')//{age: 0}
+        .exec((err, data) => {
+          if(err) return console.err(err);
+          console.log(data);
+          done(null, data);
+        });
 };
 
 /** **Well Done !!**
